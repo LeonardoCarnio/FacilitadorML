@@ -1251,7 +1251,15 @@ function initFirebase() {
 // ═══════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════
-function cfg(k) { return localStorage.getItem('cml_' + k) || ''; }
+function cfg(k) {
+  const v = localStorage.getItem('cml_' + k) || '';
+  // Autodetecta: se backend não configurado e estamos no Vercel (ou qualquer host != file://),
+  // usa o próprio origin como backend.
+  if (k === 'backend' && !v && location.protocol.startsWith('http')) {
+    return location.origin;
+  }
+  return v;
+}
 function setCfg(k, v) { localStorage.setItem('cml_' + k, v); }
 
 window.saveConfig = function() {
