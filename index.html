@@ -1329,7 +1329,10 @@ function loadMLStatus() {
   const btn = document.getElementById('ml-status-btn');
   const txt = document.getElementById('ml-status-text');
 
-  if (token && (expires === 0 || expires > now)) {
+ if (
+  token === 'ml_connected' ||
+  (token && (expires === 0 || expires > now))
+) {
     btn.className = 'ml-badge connected';
     txt.textContent = account ? `ML: ${account}` : 'ML Conectado';
   } else if (refresh) {
@@ -1408,7 +1411,7 @@ async function handleMLCallback() {
     return;
   }
 
-  setCfg('ml-token', 'connected');
+ setCfg('ml-token', 'ml_connected');
 
   const btn = document.getElementById('ml-status-btn');
   const txt = document.getElementById('ml-status-text');
