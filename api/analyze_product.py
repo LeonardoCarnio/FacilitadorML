@@ -1,33 +1,114 @@
 import os
 import json
+from http.server import BaseHTTPRequestHandler
 import google.generativeai as genai
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
 
-def analyze_product(product_data: dict):
-    model = genai.GenerativeModel('gemini-1.5-pro')
-    
-    prompt = f"""
-    Analise o seguinte produto e retorne um JSON com:
-    - recomendacao: COMPRAR | ANALISAR | EVITAR
-    - score: número de 0 a 100
-    - riscos: array de strings
-    - oportunidades: array de strings
-    - suggestedShippingMode: PAC | SEDEX | RETIRADA | MOTOBOY | N/A (baseado no peso, volume e tipo do produto)
-    
-    Produto: {json.dumps(product_data, ensure_ascii=False)}
-    """
-    
-    response = model.generate_content(prompt)
-    
-    try:
-        result = json.loads(response.text)
-        return result
-    except:
-        return {
-            "recomendacao": "ANALISAR",
-            "score": 50,
-            "riscos": ["Erro na análise"],
-            "oportunidades": [],
-            "suggestedShippingMode": "N/A"
-        }
+
+class handler(BaseHTTPRequestHandler):
+
+    def do_POST(self):
+
+        try:
+
+            content_length = int(
+                self.headers.get("Content-Length", 0)
+            )
+
+            body = self.rfile.read(content_length)
+
+            data = json.loads(body)
+
+            name = data.get("name", "")
+
+            model_name = "models/gemini-2.0-flash"
+
+            model = genai.GenerativeModel(
+                model_name
+            )
+
+            prompt = f"""
+Analise este produto do catálogo.
+
+Produto:
+{name}
+
+Retorne APENAS JSON válido:
+
+{{
+  "categoryId":"MLB1000",
+  "categoryName":"Categoria",
+  "categoryFee":11,
+  "weightG":500,
+  "dimensions": {{
+    "c":20,
+    "l":15,
+    "a":10
+  }},
+  "suggestedShippingMode":"full"
+}}
+"""
+
+            response = model.generate_content(
+                prompt
+            )
+
+            text = response.text.strip()
+
+            if text.startswith("```json"):
+                text = text.replace(
+                    "```json",
+                    ""
+                ).replace(
+                    "```",
+                    ""
+                ).strip()
+
+            result = json.loads(text)
+
+            return self.send_json(
+                200,
+                result
+            )
+
+        except Exception as e:
+
+            return self.send_json(
+                500,
+                {
+                    "success": False,
+                    "error": str(e)
+                }
+            )
+
+    def do_GET(self):
+
+        self.send_json(
+            200,
+            {
+                "success": True,
+                "endpoint": "analyze_product",
+                "status": "online"
+            }
+        )
+
+    def send_json(self, status_code, data):
+
+        self.send_response(status_code)
+
+        self.send_header(
+            "Content-Type",
+            "application/json; charset=utf-8"
+        )
+
+        self.end_headers()
+
+        self.wfile.write(
+            json.dumps(
+                data,
+                ensure_ascii=False
+            ).encode("utf-8")
+        )
