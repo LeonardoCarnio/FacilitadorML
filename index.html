@@ -1400,38 +1400,29 @@ window.handleMLAuth = function() {
   window.location.href = url;
 };
 
-// O backend redireciona pra cá com tokens no fragmento da URL: #access_token=...&refresh_token=...&expires_in=...
 async function handleMLCallback() {
-  if (!window.location.hash || !window.location.hash.includes('access_token')) return;
-  const params = new URLSearchParams(window.location.hash.slice(1));
-  const access_token = params.get('access_token');
-  const refresh_token = params.get('refresh_token');
-  const expires_in = parseInt(params.get('expires_in') || '21600');
-  if (!access_token) return;
 
-  saveMLTokens({ access_token, refresh_token, expires_in });
+  const params = new URLSearchParams(window.location.search);
 
-  // Buscar nickname da conta
-  try {
-    const me = await mlGet('/users/me');
-    if (me && me.nickname) setCfg('ml-account', me.nickname);
-  } catch(e) {}
-
-  // Backup no Firebase (opcional)
-  if (db) {
-    try {
-      await setDoc(doc(db, 'ml_connections', 'current'), {
-        access_token, refresh_token,
-        expires_at: Date.now() + expires_in * 1000,
-        account: cfg('ml-account'),
-        updated_at: new Date().toISOString()
-      });
-    } catch(e) {}
+  if (params.get('ml_connected') !== 'true') {
+    return;
   }
 
+  setCfg('ml-token', 'connected');
+
+  const btn = document.getElementById('ml-status-btn');
+  const txt = document.getElementById('ml-status-text');
+
+  btn.className = 'ml-badge connected';
+  txt.textContent = 'ML Conectado';
+
   toast('Mercado Livre conectado! ✓', 'ok');
-  window.history.replaceState({}, '', window.location.pathname);
-  loadMLStatus();
+
+  window.history.replaceState(
+    {},
+    '',
+    window.location.pathname
+  );
 }
 
 async function mlGet(path) {
