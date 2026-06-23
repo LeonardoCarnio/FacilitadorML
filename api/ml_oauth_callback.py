@@ -71,16 +71,14 @@ class handler(BaseHTTPRequestHandler):
                     }
                 )
 
-            return self.send_json(
-                200,
-                {
-                    "success": True,
-                    "message": "Mercado Livre conectado com sucesso",
-                    "user_id": result.get("user_id"),
-                    "access_token": result.get("access_token"),
-                    "refresh_token": result.get("refresh_token")
-                }
-            )
+          self.send_response(302)
+
+self.send_header(
+    "Location",
+    "https://facilitador-ml.vercel.app/?ml_connected=true"
+)
+
+self.end_headers()
 
         except Exception as e:
 
