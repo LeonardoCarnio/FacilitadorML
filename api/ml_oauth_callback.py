@@ -1,9 +1,9 @@
-```python
 import os
 import json
 import requests
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+
 
 class handler(BaseHTTPRequestHandler):
 
@@ -11,34 +11,41 @@ class handler(BaseHTTPRequestHandler):
 
         try:
 
-            parsed = urlparse(self.path)
-            params = parse_qs(parsed.query)
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
 
-            code = params.get("code", [None])[0]
+            code = query_params.get("code", [None])[0]
 
             if not code:
-                self.send_json(
-                    200,
+                return self.send_json(
+                    400,
                     {
                         "success": False,
-                        "message": "Nenhum código OAuth recebido"
+                        "message": "Código OAuth não recebido"
                     }
                 )
-                return
 
             client_id = os.getenv("ML_CLIENT_ID")
             client_secret = os.getenv("ML_CLIENT_SECRET")
             redirect_uri = os.getenv("ML_REDIRECT_URI")
 
-            if not client_id or not client_secret or not redirect_uri:
-                self.send_json(
+            if not client_id:
+                return self.send_json(
                     500,
-                    {
-                        "success": False,
-                        "error": "Variáveis de ambiente não configuradas"
-                    }
+                    {"success": False, "error": "ML_CLIENT_ID não configurado"}
                 )
-                return
+
+            if not client_secret:
+                return self.send_json(
+                    500,
+                    {"success": False, "error": "ML_CLIENT_SECRET não configurado"}
+                )
+
+            if not redirect_uri:
+                return self.send_json(
+                    500,
+                    {"success": False, "error": "ML_REDIRECT_URI não configurado"}
+                )
 
             response = requests.post(
                 "https://api.mercadolibre.com/oauth/token",
@@ -52,32 +59,32 @@ class handler(BaseHTTPRequestHandler):
                 timeout=30
             )
 
-            oauth_data = response.json()
+            result = response.json()
 
             if response.status_code != 200:
-                self.send_json(
+
+                return self.send_json(
                     response.status_code,
                     {
                         "success": False,
-                        "mercadolivre_response": oauth_data
+                        "mercadolivre_response": result
                     }
                 )
-                return
 
-            self.send_json(
+            return self.send_json(
                 200,
                 {
                     "success": True,
                     "message": "Mercado Livre conectado com sucesso",
-                    "user_id": oauth_data.get("user_id"),
-                    "access_token": oauth_data.get("access_token"),
-                    "refresh_token": oauth_data.get("refresh_token")
+                    "user_id": result.get("user_id"),
+                    "access_token": result.get("access_token"),
+                    "refresh_token": result.get("refresh_token")
                 }
             )
 
         except Exception as e:
 
-            self.send_json(
+            return self.send_json(
                 500,
                 {
                     "success": False,
@@ -85,13 +92,15 @@ class handler(BaseHTTPRequestHandler):
                 }
             )
 
-    def send_json(self, status, data):
+    def send_json(self, status_code, data):
 
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.end_headers()
 
         self.wfile.write(
-            json.dumps(data).encode("utf-8")
+            json.dumps(
+                data,
+                ensure_ascii=False
+            ).encode("utf-8")
         )
-```
