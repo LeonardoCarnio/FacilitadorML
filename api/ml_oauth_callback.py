@@ -33,7 +33,7 @@ def do_GET(self):
 
     client_id = os.environ.get("ML_CLIENT_ID")
     client_secret = os.environ.get("ML_CLIENT_SECRET")
-    redirect_uri = os.environ.get("ML-REDIRECT-URI")
+    redirect_uri = os.environ.get("ML_REDIRECT_URI")
 
     payload = {
         "grant_type": "authorization_code",
