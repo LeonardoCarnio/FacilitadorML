@@ -1,32 +1,64 @@
 import json
+import requests
 from http.server import BaseHTTPRequestHandler
+
+TOKEN_FILE = "/tmp/ml_token.json"
 
 class handler(BaseHTTPRequestHandler):
 
-    def do_POST(self):
+```
+def do_GET(self):
 
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
+    try:
 
-        data = json.loads(body)
+        with open(TOKEN_FILE, "r") as f:
+            token_data = json.load(f)
 
-        title = data.get("title", "")
-        description = data.get("description", "")
+        access_token = token_data["access_token"]
 
-        result = {
-            "optimized_title": f"{title} | Produto Premium",
-            "optimized_description": description,
-            "keywords": [
-                "mercado livre",
-                "produto",
-                "vendas"
-            ]
-        }
+        response = requests.get(
+            "https://api.mercadolibre.com/users/me",
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=30
+        )
+
+        user_data = response.json()
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
 
         self.wfile.write(
-            json.dumps(result).encode()
+            json.dumps({
+                "connected": True,
+                "user": user_data
+            }).encode()
         )
+
+    except FileNotFoundError:
+
+        self.send_response(400)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+
+        self.wfile.write(
+            json.dumps({
+                "connected": False,
+                "message": "Nenhum token encontrado"
+            }).encode()
+        )
+
+    except Exception as e:
+
+        self.send_response(500)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+
+        self.wfile.write(
+            json.dumps({
+                "error": str(e)
+            }).encode()
+        )
+```
