@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatálogoML — Análise de Viabilidade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --danger: #ff4757;
+    --warn: #ffa502;
+    --ok: #2ed573;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo span { color: var(--accent); }
+  .logo em { color: var(--accent2); font-style: normal; }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .ml-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .ml-badge.connected { background: rgba(46,213,115,0.15); color: var(--ok); border: 1px solid rgba(46,213,115,0.3); }
+  .ml-badge.disconnected { background: rgba(255,71,87,0.15); color: var(--danger); border: 1px solid rgba(255,71,87,0.3); }
+  .ml-badge.connecting { background: rgba(255,165,2,0.15); color: var(--warn); border: 1px solid rgba(255,165,2,0.3); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* SETUP BANNER */
+  #setup-banner {
+    background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.08));
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: none;
+  }
+  #setup-banner.visible { display: block; }
+  .setup-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--accent); }
+  .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .setup-field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+  .setup-field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+  }
+  .setup-field input:focus { border-color: var(--accent); }
+  .setup-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  /* MAIN */
+  main { flex: 1; display: flex; flex-direction: column; }
+
+  /* TABS */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 4px;
+  }
+  .tab {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PANELS */
+  .panel { display: none; flex: 1; padding: 32px; }
+  .panel.active { display: flex; flex-direction: column; gap: 24px; }
+
+  /* UPLOAD AREA */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.05);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .upload-sub { font-size: 13px; color: var(--muted); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5a52e0; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-danger { background: rgba(255,71,87,0.15); color: var(--danger); border: 1px solid rgba(255,71,87,0.3); }
+  .btn-ok { background: rgba(46,213,115,0.15); color: var(--ok); border: 1px solid rgba(46,213,115,0.3); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PRODUCT LIST */
+  .product-list { display: flex; flex-direction: column; gap: 8px; }
+  .product-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .product-item:hover { border-color: var(--accent); }
+  .product-item.selected { border-color: var(--accent); background: rgba(108,99,255,0.1); }
+  .product-check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.2s; }
+  .product-item.selected .product-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .product-name { flex: 1; font-size: 14px; }
+  .product-qty { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+  /* RESULTS TABLE */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .results-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .results-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-ok { background: rgba(46,213,115,0.15); color: var(--ok); }
+  .status-warn { background: rgba(255,165,2,0.15); color: var(--warn); }
+  .status-no { background: rgba(255,71,87,0.15); color: var(--danger); }
+
+  .price { font-family: var(--mono); }
+  .price.good { color: var(--ok); }
+  .price.bad { color: var(--danger); }
+
+  /* SHIPPING PILLS */
+  .ship-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ship-pill {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .ship-full { background: rgba(108,99,255,0.15); color: var(--accent); border-color: rgba(108,99,255,0.3); }
+  .ship-correios { background: rgba(255,165,2,0.15); color: var(--warn); border-color: rgba(255,165,2,0.3); }
+  .ship-flex { background: rgba(0,212,170,0.15); color: var(--accent2); border-color: rgba(0,212,170,0.3); }
+  .ship-places { background: rgba(255,71,87,0.15); color: var(--danger); border-color: rgba(255,71,87,0.3); }
+
+  /* LOADING */
+  .loading-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: loading 1.5s ease-in-out infinite;
+    width: 60%;
+    margin: 8px auto;
+  }
+  @keyframes loading { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 60px 32px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .empty-sub { font-size: 13px; }
+
+  /* LOG */
+  .log {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .log-line { color: var(--muted); }
+  .log-line.ok { color: var(--ok); }
+  .log-line.err { color: var(--danger); }
+  .log-line.info { color: var(--accent); }
+
+  /* TOAST */
+  #toast-area {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 9999;
+  }
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    max-width: 320px;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.ok { border-left: 3px solid var(--ok); }
+  .toast.err { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--accent); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    display: none;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .modal-close { float: right; cursor: pointer; color: var(--muted); font-size: 20px; }
+
+  /* DETAIL ROW */
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .detail-row:last-child { border: none; }
+  .detail-label { color: var(--muted); }
+  .detail-value { font-weight: 500; font-family: var(--mono); }
+
+  /* PROGRESS */
+  .progress-wrap { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  /* GRID 2 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* MARGIN METER */
+  .margin-meter { display: flex; flex-direction: column; gap: 4px; }
+  .margin-bar { height: 8px; border-radius: 4px; background: var(--surface2); overflow: hidden; }
+  .margin-fill { height: 100%; border-radius: 4px; }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    resize: vertical;
+    outline: none;
+    min-height: 100px;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+
+  input[type=number], input[type=text] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); }
+
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; margin-top: 12px; }
+
+  .row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: 16px; font-weight: 600; }
+
+  .info-box {
+    background: rgba(108,99,255,0.1);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .info-box a { color: var(--accent); }
+
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    word-break: break-all;
+    cursor: pointer;
+    position: relative;
+  }
+  .code-block:hover::after {
+    content: 'Copiar';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .fee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .fee-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .fee-name { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .fee-value { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+  .fee-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">📦 Catálogo<span>ML</span> <em>Analyzer</em></div>
+  <div class="header-right">
+    <button class="btn btn-secondary" onclick="toggleSetup()">⚙️ Configurar</button>
+    <button class="ml-badge disconnected" id="ml-status-btn" onclick="handleMLAuth()">
+      <div class="dot"></div>
+      <span id="ml-status-text">ML Desconectado</span>
+    </button>
+  </div>
+</header>
+
+<!-- SETUP BANNER -->
+<div id="setup-banner">
+  <div class="setup-title">⚙️ Configuração do Sistema</div>
+  <div class="setup-grid">
+    <div class="setup-field">
+      <label>🚀 URL do Backend (Vercel)</label>
+      <input type="text" id="cfg-backend" placeholder="https://seu-projeto.vercel.app" />
+    </div>
+    <div class="setup-field">
+      <label>ML Client ID (App ID público)</label>
+      <input type="text" id="cfg-ml-id" placeholder="Seu App ID do Mercado Livre" />
+    </div>
+    <div class="setup-field">
+      <label>ML Redirect URI (cole no painel ML)</label>
+      <div class="code-block" onclick="copyRedirectURI()" id="redirect-uri-display">—</div>
+    </div>
+    <div class="setup-field">
+      <label>Firebase API Key (opcional)</label>
+      <input type="password" id="cfg-fb-key" placeholder="AIza..." />
+    </div>
+    <div class="setup-field">
+      <label>Firebase Project ID (opcional)</label>
+      <input type="text" id="cfg-fb-project" placeholder="meu-projeto-firebase" />
+    </div>
+  </div>
+  <div class="info-box" style="margin-top:8px;font-size:12px">
+    🔐 Client Secret do ML e API Key do Gemini ficam <strong>só no backend Vercel</strong> (env vars), nunca no browser.
+  </div>
+  <div class="setup-actions">
+    <button class="btn btn-primary" onclick="saveConfig()">💾 Salvar Configuração</button>
+    <button class="btn btn-secondary" onclick="toggleSetup()">Fechar</button>
+    <button class="btn btn-danger" onclick="clearConfig()">🗑 Limpar Tudo</button>
+  </div>
+  <div class="info-box" style="margin-top:12px">
+    <strong>URI de Redirecionamento para o ML:</strong><br>
+    Cole exatamente a URL abaixo no painel do Mercado Livre em <em>URIs de redirecionamento</em>:<br>
+    <div class="code-block" style="margin-top:8px" onclick="copyRedirectURI()" id="redirect-uri-display2">—</div>
+    <br>
+    <strong>Firebase gratuito:</strong> <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Criar projeto → Firestore → Começar
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('upload')">📄 Catálogo</div>
+  <div class="tab" onclick="switchTab('analise')">🔍 Análise ML</div>
+  <div class="tab" onclick="switchTab('resultados')">📊 Resultados</div>
+  <div class="tab" onclick="switchTab('taxas')">💸 Taxas ML</div>
+  <div class="tab" onclick="switchTab('historico')">🗂 Histórico</div>
+</div>
+
+<!-- PANEL: CATÁLOGO -->
+<div class="panel active" id="panel-upload">
+  <div class="section-header">
+    <div class="section-title">📄 Importar Catálogo</div>
+    <button class="btn btn-secondary" onclick="clearCatalog()">🗑 Limpar</button>
+  </div>
+
+  <div class="upload-zone" id="upload-zone" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.csv" onchange="handleFileSelect(event)" multiple />
+    <div class="upload-icon">📂</div>
+    <div class="upload-title">Arraste ou clique para enviar o catálogo</div>
+    <div class="upload-sub">PDF, Word (.docx), TXT, CSV — Gemini extrai os produtos automaticamente</div>
+  </div>
+
+  <div id="upload-log" class="log" style="display:none"></div>
+
+  <div id="products-area" style="display:none">
+    <div class="section-header">
+      <div class="section-title">Produtos Extraídos</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="selectAll()">Selecionar Todos</button>
+        <button class="btn btn-primary" onclick="goToAnalysis()" id="btn-analyze">🔍 Analisar Selecionados no ML</button>
+      </div>
+    </div>
+    <div class="product-list" id="product-list"></div>
+  </div>
+
+  <div id="upload-empty" class="empty">
+    <div class="empty-icon">📋</div>
+    <div class="empty-title">Nenhum catálogo carregado</div>
+    <div class="empty-sub">Envie um arquivo PDF ou Word com sua lista de produtos</div>
+  </div>
+
+  <!-- MANUAL -->
+  <div class="card">
+    <div class="card-title">✍️ Ou insira manualmente</div>
+    <label>Cole aqui os produtos (um por linha, ex: "Suporte de celular veicular")</label>
+    <textarea id="manual-input" rows="5" placeholder="Suporte de celular veicular&#10;Case protetora iPhone 15&#10;Cabo USB-C 2m&#10;..."></textarea>
+    <div style="margin-top:8px">
+      <button class="btn btn-primary" onclick="processManual()">➕ Adicionar à Lista</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: ANÁLISE -->
+<div class="panel" id="panel-analise">
+  <div class="section-header">
+    <div class="section-title">🔍 Configurar Análise</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Parâmetros de Custo</div>
+      <label>Seu custo médio de produção/compra (R$)</label>
+      <input type="number" id="param-custo" value="15" min="0" step="0.01" />
+
+      <label>Margem mínima desejada (%)</label>
+      <input type="number" id="param-margem" value="20" min="0" max="100" />
+
+      <label>Categoria ML (para taxas corretas)</label>
+      <select id="param-categoria" onchange="updateCategoryFees()">
+        <option value="MLB1051">Acessórios para Celulares (12%)</option>
+        <option value="MLB1648">Informática (11%)</option>
+        <option value="MLB1144">Esportes e Fitness (13%)</option>
+        <option value="MLB1574">Casa, Móveis e Decoração (13%)</option>
+        <option value="MLB1000">Outros (11%)</option>
+        <option value="MLB1182">Ferramentas (11%)</option>
+        <option value="MLB1430">Indústria e Comércio (11%)</option>
+        <option value="MLB1499">Brinquedos e Hobbies (13%)</option>
+        <option value="MLB1168">Bebês (13%)</option>
+        <option value="MLB1276">Beleza e Cuidado Pessoal (13%)</option>
+      </select>
+
+      <label>Modalidade de Entrega</label>
+      <select id="param-envio">
+        <option value="full">FULL (armazenado ML) — Frete Grátis obrigatório</option>
+        <option value="flex">Flex (entrega própria dia mesmo)</option>
+        <option value="me2" selected>Coleta (agendado ML)</option>
+        <option value="correios">Correios</option>
+      </select>
+
+      <label>Peso estimado do produto (g)</label>
+      <input type="number" id="param-peso" value="300" min="1" />
+
+      <label>Dimensões (cm) — C x L x A</label>
+      <div class="row">
+        <input type="number" id="param-c" value="20" style="width:70px" />
+        <input type="number" id="param-l" value="15" style="width:70px" />
+        <input type="number" id="param-a" value="5" style="width:70px" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Taxas Calculadas (Preview)</div>
+      <div class="fee-grid">
+        <div class="fee-card">
+          <div class="fee-name">Comissão ML</div>
+          <div class="fee-value" id="fee-comissao" style="color:var(--danger)">12%</div>
+          <div class="fee-sub">da venda</div>
+        </div>
+        <div class="fee-card">
+          <div class="fee-name">Frete Est.</div>
+          <div class="fee-value" id="fee-frete" style="color:var(--warn)">R$12</div>
+          <div class="fee-sub" id="fee-frete-sub">me2/coleta</div>
+        </div>
+        <div class="fee-card">
+          <div class="fee-name">Taxa Fixa</div>
+          <div class="fee-value" id="fee-fixo" style="color:var(--muted)">R$6</div>
+          <div class="fee-sub">por unidade</div>
+        </div>
+        <div class="fee-card">
+          <div class="fee-name">Mín. Venda</div>
+          <div class="fee-value" id="fee-minvenda" style="color:var(--ok)">R$—</div>
+          <div class="fee-sub">para sua margem</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="card-title">Produtos para analisar</div>
+        <div id="selected-count" style="font-size:32px;font-weight:700;color:var(--accent)">0</div>
+        <div style="font-size:13px;color:var(--muted)">itens selecionados do catálogo</div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" style="width:100%" onclick="startAnalysis()" id="btn-start-analysis">
+          🚀 Iniciar Análise Completa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="analysis-progress" style="display:none" class="card">
+    <div class="card-title">Progresso</div>
+    <div id="progress-log" class="log"></div>
+    <div class="progress-wrap" style="margin-top:12px">
+      <div class="progress-fill" id="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px" id="progress-text">Aguardando...</div>
+  </div>
+</div>
+
+<!-- PANEL: RESULTADOS -->
+<div class="panel" id="panel-resultados">
+  <div class="section-header">
+    <div class="section-title">📊 Resultados da Análise</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn btn-secondary" onclick="loadHistory()">↻ Recarregar</button>
+    </div>
+  </div>
+
+  <div id="results-summary" style="display:none" class="grid2">
+    <div class="card" style="text-align:center">
+      <div style="font-size:36px;font-weight:700;color:var(--ok)" id="sum-ok">0</div>
+      <div style="color:var(--muted);font-size:13px">✅ Viáveis</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:36px;font-weight:700;color:var(--danger)" id="sum-no">0</div>
+      <div style="color:var(--muted);font-size:13px">❌ Inviáveis</div>
+    </div>
+  </div>
+
+  <div id="results-container">
+    <div class="empty">
+      <div class="empty-icon">📊</div>
+      <div class="empty-title">Nenhum resultado ainda</div>
+      <div class="empty-sub">Vá ao catálogo, selecione produtos e inicie a análise</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: TAXAS -->
+<div class="panel" id="panel-taxas">
+  <div class="section-title" style="margin-bottom:20px">💸 Guia de Taxas do Mercado Livre</div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Comissões por Categoria</div>
+      <table class="results-table">
+        <tr><th>Categoria</th><th>Taxa</th></tr>
+        <tr><td>Acessórios para Celulares</td><td><span class="price">12%</span></td></tr>
+        <tr><td>Informática</td><td><span class="price">11%</span></td></tr>
+        <tr><td>Esportes e Fitness</td><td><span class="price">13%</span></td></tr>
+        <tr><td>Casa, Móveis e Decoração</td><td><span class="price">13%</span></td></tr>
+        <tr><td>Ferramentas</td><td><span class="price">11%</span></td></tr>
+        <tr><td>Brinquedos e Hobbies</td><td><span class="price">13%</span></td></tr>
+        <tr><td>Bebês</td><td><span class="price">13%</span></td></tr>
+        <tr><td>Beleza e Cuidado</td><td><span class="price">13%</span></td></tr>
+        <tr><td>Outros / Geral</td><td><span class="price">11%</span></td></tr>
+      </table>
+      <div class="info-box" style="margin-top:12px;font-size:12px">
+        ⚠️ Produtos com preço abaixo de R$79 pagam taxa fixa de R$5 ao invés de % (exceto alguns)
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Modalidades de Envio</div>
+      <div class="product-list" style="gap:10px">
+        <div class="product-item" style="flex-direction:column;align-items:flex-start;cursor:default">
+          <span class="ship-pill ship-full">FULL</span>
+          <div style="font-size:13px;margin-top:6px">Armazenamento e envio pelo ML. Frete grátis obrigatório. Custo descontado do repasse (~R$8–25 por unidade conforme peso/dimensão).</div>
+        </div>
+        <div class="product-item" style="flex-direction:column;align-items:flex-start;cursor:default">
+          <span class="ship-pill ship-correios">Correios</span>
+          <div style="font-size:13px;margin-top:6px">Você embala e leva ao posto. ML desconta frete do repasse. R$10–30 médio conforme peso.</div>
+        </div>
+        <div class="product-item" style="flex-direction:column;align-items:flex-start;cursor:default">
+          <span class="ship-pill ship-places">Coleta (ME2)</span>
+          <div style="font-size:13px;margin-top:6px">Motoboy do ML vem buscar. Agendado. Custo similar aos Correios mas mais praticidade.</div>
+        </div>
+        <div class="product-item" style="flex-direction:column;align-items:flex-start;cursor:default">
+          <span class="ship-pill ship-flex">Flex</span>
+          <div style="font-size:13px;margin-top:6px">Entrega no mesmo dia por você. Disponível em regiões selecionadas. Sem custo extra do ML.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Calculadora de Frete Estimado (Correios/Coleta)</div>
+    <div class="row">
+      <div style="flex:1">
+        <label>Peso (g)</label>
+        <input type="number" id="calc-peso" value="300" />
+      </div>
+      <div style="flex:1">
+        <label>Comprimento (cm)</label>
+        <input type="number" id="calc-c" value="20" />
+      </div>
+      <div style="flex:1">
+        <label>Largura (cm)</label>
+        <input type="number" id="calc-l" value="15" />
+      </div>
+      <div style="flex:1">
+        <label>Altura (cm)</label>
+        <input type="number" id="calc-a" value="5" />
+      </div>
+      <div style="align-self:flex-end">
+        <button class="btn btn-primary" onclick="calcFrete()">Calcular</button>
+      </div>
+    </div>
+    <div id="frete-result" style="margin-top:12px;display:none" class="fee-grid"></div>
+  </div>
+</div>
+
+<!-- PANEL: HISTÓRICO -->
+<div class="panel" id="panel-historico">
+  <div class="section-header">
+    <div class="section-title">🗂 Histórico de Análises</div>
+    <button class="btn btn-secondary" onclick="loadHistory()">↻ Atualizar</button>
+  </div>
+  <div id="history-container">
+    <div class="empty"><div class="empty-icon">🗂</div><div class="empty-title">Nenhum histórico</div></div>
+  </div>
+</div>
+
+<!-- MODAL: Detalhes do Produto -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-detail')">✕</span>
+    <div class="modal-title" id="modal-product-name">Produto</div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- TOAST AREA -->
+<div id="toast-area"></div>
+
+<script type="module">
+// ═══════════════════════════════════════════
+//  FIREBASE
+// ═══════════════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+let db = null;
+window._db = null;
+
+function initFirebase() {
+  const key = cfg('fb-key');
+  const project = cfg('fb-project');
+  if (!key || !project) return false;
+  try {
+    const app = initializeApp({ apiKey: key, projectId: project, authDomain: `${project}.firebaseapp.com` }, 'catalogo-ml-' + project);
+    db = getFirestore(app);
+    window._db = db;
+    log('Firebase conectado ✓', 'ok');
+    return true;
+  } catch(e) {
+    log('Firebase: ' + e.message, 'err');
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+function cfg(k) { return localStorage.getItem('cml_' + k) || ''; }
+function setCfg(k, v) { localStorage.setItem('cml_' + k, v); }
+
+window.saveConfig = function() {
+  ['backend','ml-id','fb-key','fb-project'].forEach(k => {
+    const el = document.getElementById('cfg-' + k);
+    if (el && el.value.trim()) {
+      let v = el.value.trim();
+      if (k === 'backend') v = v.replace(/\/+$/, ''); // tira / final
+      setCfg(k, v);
+    }
+  });
+  initFirebase();
+  loadMLStatus();
+  toast('Configuração salva!', 'ok');
+  updateRedirectURI();
+};
+
+window.clearConfig = function() {
+  if (!confirm('Limpar toda configuração?')) return;
+  ['backend','ml-id','fb-key','fb-project','ml-token','ml-refresh','ml-expires','ml-account'].forEach(k => {
+    localStorage.removeItem('cml_' + k);
+  });
+  toast('Configuração limpa', 'info');
+  loadMLStatus();
+};
+
+function loadConfigUI() {
+  ['backend','ml-id','fb-key','fb-project'].forEach(k => {
+    const el = document.getElementById('cfg-' + k);
+    if (el) el.value = cfg(k);
+  });
+  updateRedirectURI();
+}
+
+function updateRedirectURI() {
+  // Redirect agora aponta pro backend Vercel
+  const backend = cfg('backend');
+  const uri = backend ? `${backend}/api/ml-oauth-callback` : '(configure a URL do backend)';
+  ['redirect-uri-display','redirect-uri-display2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = uri;
+  });
+}
+
+window.copyRedirectURI = function() {
+  const backend = cfg('backend');
+  if (!backend) return toast('Configure a URL do backend primeiro', 'err');
+  navigator.clipboard.writeText(`${backend}/api/ml-oauth-callback`).then(() => toast('URI copiada!', 'ok'));
+};
+
+window.toggleSetup = function() {
+  const b = document.getElementById('setup-banner');
+  b.classList.toggle('visible');
+  if (b.classList.contains('visible')) loadConfigUI();
+};
+
+// ═══════════════════════════════════════════
+//  ML AUTH — sem backend, PKCE flow simulado
+// ═══════════════════════════════════════════
+function loadMLStatus() {
+  const token = cfg('ml-token');
+  const refresh = cfg('ml-refresh');
+  const account = cfg('ml-account');
+  const expires = parseInt(cfg('ml-expires') || '0');
+  const now = Date.now();
+
+  const btn = document.getElementById('ml-status-btn');
+  const txt = document.getElementById('ml-status-text');
+
+  if (token && (expires === 0 || expires > now)) {
+    btn.className = 'ml-badge connected';
+    txt.textContent = account ? `ML: ${account}` : 'ML Conectado';
+  } else if (refresh) {
+    // Tenta renovar
+    btn.className = 'ml-badge connecting';
+    txt.textContent = 'Renovando token...';
+    renewToken(refresh);
+  } else {
+    btn.className = 'ml-badge disconnected';
+    txt.textContent = 'ML Desconectado';
+  }
+}
+
+async function renewToken(refreshToken) {
+  const backend = cfg('backend');
+  if (!backend || !refreshToken) { setMLDisconnected(); return; }
+  try {
+    const resp = await fetch(`${backend}/api/ml-refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await resp.json();
+    if (data.access_token) {
+      saveMLTokens(data);
+      loadMLStatus();
+    } else {
+      setMLDisconnected();
+    }
+  } catch(e) {
+    setMLDisconnected();
+  }
+}
+
+function saveMLTokens(data) {
+  if (data.access_token) setCfg('ml-token', data.access_token);
+  if (data.refresh_token) setCfg('ml-refresh', data.refresh_token);
+  if (data.expires_in) setCfg('ml-expires', String(Date.now() + data.expires_in * 1000));
+}
+
+function setMLDisconnected() {
+  const btn = document.getElementById('ml-status-btn');
+  const txt = document.getElementById('ml-status-text');
+  btn.className = 'ml-badge disconnected';
+  txt.textContent = 'ML Desconectado';
+}
+
+window.handleMLAuth = function() {
+  const token = cfg('ml-token');
+  if (token) {
+    if (confirm('Desconectar do Mercado Livre?')) {
+      ['ml-token','ml-refresh','ml-expires','ml-account'].forEach(k => localStorage.removeItem('cml_' + k));
+      loadMLStatus();
+    }
+    return;
+  }
+  const clientId = cfg('ml-id');
+  const backend = cfg('backend');
+  if (!clientId || !backend) {
+    toggleSetup();
+    toast('Configure URL do backend e ML Client ID primeiro', 'err');
+    return;
+  }
+  // Redirect URI = backend Vercel. State = URL do frontend (pra voltar pra cá depois).
+  const redirectURI = encodeURIComponent(`${backend}/api/ml-oauth-callback`);
+  const state = encodeURIComponent(window.location.href.split('#')[0].split('?')[0]);
+  const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectURI}&state=${state}`;
+  window.location.href = url;
+};
+
+// O backend redireciona pra cá com tokens no fragmento da URL: #access_token=...&refresh_token=...&expires_in=...
+async function handleMLCallback() {
+  if (!window.location.hash || !window.location.hash.includes('access_token')) return;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  const expires_in = parseInt(params.get('expires_in') || '21600');
+  if (!access_token) return;
+
+  saveMLTokens({ access_token, refresh_token, expires_in });
+
+  // Buscar nickname da conta
+  try {
+    const me = await mlGet('/users/me');
+    if (me && me.nickname) setCfg('ml-account', me.nickname);
+  } catch(e) {}
+
+  // Backup no Firebase (opcional)
+  if (db) {
+    try {
+      await setDoc(doc(db, 'ml_connections', 'current'), {
+        access_token, refresh_token,
+        expires_at: Date.now() + expires_in * 1000,
+        account: cfg('ml-account'),
+        updated_at: new Date().toISOString()
+      });
+    } catch(e) {}
+  }
+
+  toast('Mercado Livre conectado! ✓', 'ok');
+  window.history.replaceState({}, '', window.location.pathname);
+  loadMLStatus();
+}
+
+async function mlGet(path) {
+  const token = cfg('ml-token');
+  if (!token) throw new Error('Sem token ML');
+  const resp = await fetch(`https://api.mercadolibre.com${path}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (resp.status === 401) {
+    const refresh = cfg('ml-refresh');
+    if (refresh) {
+      await renewToken(refresh);
+      return mlGet(path);
+    }
+    throw new Error('Token expirado e sem refresh');
+  }
+  return resp.json();
+}
+
+// ═══════════════════════════════════════════
+//  GEMINI (via backend Vercel)
+// ═══════════════════════════════════════════
+async function callGeminiText(prompt) {
+  const backend = cfg('backend');
+  if (!backend) throw new Error('Configure a URL do backend Vercel');
+  const resp = await fetch(`${backend}/api/extract-text`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: prompt })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// ═══════════════════════════════════════════
+//  UPLOAD & EXTRAÇÃO
+// ═══════════════════════════════════════════
+let extractedProducts = [];
+
+window.onDrag = function(e, over) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.toggle('dragover', over);
+};
+
+window.onDrop = function(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+};
+
+window.handleFileSelect = function(e) { handleFiles(e.target.files); };
+
+async function handleFiles(files) {
+  const logEl = document.getElementById('upload-log');
+  logEl.style.display = 'flex';
+  document.getElementById('upload-empty').style.display = 'none';
+
+  for (const file of files) {
+    addLog(logEl, `Processando: ${file.name}`, 'info');
+    try {
+      let text = '';
+      if (file.type === 'application/pdf') {
+        text = await extractPDF(file, logEl);
+      } else if (file.name.endsWith('.docx')) {
+        text = await extractDocx(file, logEl);
+      } else {
+        text = await file.text();
+        addLog(logEl, `Texto extraído (${text.length} chars)`, 'ok');
+      }
+      if (text) {
+        addLog(logEl, 'Enviando para Claude extrair produtos...', 'info');
+        const products = await extractProductsWithClaude(text);
+        addLog(logEl, `${products.length} produtos encontrados`, 'ok');
+        products.forEach(p => {
+          if (!extractedProducts.find(ep => ep.name.toLowerCase() === p.name.toLowerCase())) {
+            extractedProducts.push(p);
+          }
+        });
+        renderProductList();
+      }
+    } catch(e) {
+      addLog(logEl, 'Erro: ' + e.message, 'err');
+    }
+  }
+}
+
+async function extractPDF(file, logEl) {
+  const backend = cfg('backend');
+  if (!backend) throw new Error('Configure a URL do backend Vercel primeiro');
+  addLog(logEl, `Enviando PDF (${(file.size/1024/1024).toFixed(1)} MB) pro Gemini via backend...`, 'info');
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const resp = await fetch(`${backend}/api/extract-pdf`, { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+  // O backend já devolve { products: [...] } — encapsulamos pra reaproveitar a função abaixo.
+  return JSON.stringify(data);
+}
+
+async function extractDocx(file, logEl) {
+  addLog(logEl, 'Extraindo texto do DOCX...', 'info');
+  try {
+    const { default: mammoth } = await import('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/+esm');
+    const ab = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: ab });
+    addLog(logEl, `DOCX extraído (${result.value.length} chars)`, 'ok');
+    return result.value;
+  } catch(e) {
+    addLog(logEl, 'Mammoth não disponível, tentando como texto...', '');
+    return await file.text();
+  }
+}
+
+async function extractProductsWithClaude(text) {
+  // Se veio como JSON do PDF path (já é {"products":[...]})
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed.products) return parsed.products;
+  } catch(e) {}
+
+  // Caso contrário (DOCX/TXT/CSV), manda texto pro backend extrair via Gemini.
+  const data = await callGeminiText(text.substring(0, 30000));
+  return data.products || [];
+}
+
+function renderProductList() {
+  const list = document.getElementById('product-list');
+  const area = document.getElementById('products-area');
+  area.style.display = extractedProducts.length ? 'block' : 'none';
+
+  list.innerHTML = extractedProducts.map((p, i) => `
+    <div class="product-item selected" id="prod-${i}" onclick="toggleProduct(${i})">
+      <div class="product-check" id="check-${i}">✓</div>
+      <div class="product-name">${p.name}</div>
+      ${p.price ? `<div class="product-qty">R$${p.price}</div>` : ''}
+      ${p.qty ? `<div class="product-qty">Qtd: ${p.qty}</div>` : ''}
+    </div>
+  `).join('');
+  updateSelectedCount();
+}
+
+window.toggleProduct = function(i) {
+  const item = document.getElementById('prod-' + i);
+  const check = document.getElementById('check-' + i);
+  const sel = item.classList.toggle('selected');
+  check.textContent = sel ? '✓' : '';
+  updateSelectedCount();
+};
+
+window.selectAll = function() {
+  extractedProducts.forEach((_, i) => {
+    document.getElementById('prod-' + i).classList.add('selected');
+    document.getElementById('check-' + i).textContent = '✓';
+  });
+  updateSelectedCount();
+};
+
+function updateSelectedCount() {
+  const count = document.querySelectorAll('.product-item.selected').length;
+  const el = document.getElementById('selected-count');
+  if (el) el.textContent = count;
+}
+
+window.processManual = function() {
+  const ta = document.getElementById('manual-input');
+  const lines = ta.value.split('\n').map(l => l.trim()).filter(Boolean);
+  lines.forEach(name => {
+    if (!extractedProducts.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+      extractedProducts.push({ name, qty: 0, price: 0 });
+    }
+  });
+  ta.value = '';
+  renderProductList();
+  document.getElementById('upload-empty').style.display = 'none';
+  document.getElementById('products-area').style.display = 'block';
+  toast(`${lines.length} produto(s) adicionado(s)`, 'ok');
+};
+
+window.clearCatalog = function() {
+  extractedProducts = [];
+  document.getElementById('product-list').innerHTML = '';
+  document.getElementById('products-area').style.display = 'none';
+  document.getElementById('upload-empty').style.display = 'block';
+  document.getElementById('upload-log').style.display = 'none';
+};
+
+window.goToAnalysis = function() {
+  updateSelectedCount();
+  switchTab('analise');
+};
+
+// ═══════════════════════════════════════════
+//  ANÁLISE ML
+// ═══════════════════════════════════════════
+const CATEGORY_FEES = {
+  'MLB1051': 12, 'MLB1648': 11, 'MLB1144': 13, 'MLB1574': 13,
+  'MLB1000': 11, 'MLB1182': 11, 'MLB1430': 11, 'MLB1499': 13, 'MLB1168': 13, 'MLB1276': 13
+};
+
+window.updateCategoryFees = function() {
+  const cat = document.getElementById('param-categoria').value;
+  const fee = CATEGORY_FEES[cat] || 11;
+  document.getElementById('fee-comissao').textContent = fee + '%';
+  calcMinSalePrice();
+};
+
+function calcMinSalePrice() {
+  const custo = parseFloat(document.getElementById('param-custo').value) || 0;
+  const margem = parseFloat(document.getElementById('param-margem').value) || 20;
+  const cat = document.getElementById('param-categoria').value;
+  const fee = CATEGORY_FEES[cat] || 11;
+  const peso = parseInt(document.getElementById('param-peso').value) || 300;
+  const frete = estimateFrete(peso);
+  const fixo = custo > 79 ? 0 : 6;
+
+  document.getElementById('fee-frete').textContent = `R$${frete.toFixed(0)}`;
+  document.getElementById('fee-fixo').textContent = `R$${fixo}`;
+
+  // Preço mínimo: custo + frete + fixo + margem + comissão ML
+  // precoVenda * (1 - fee/100) - frete - fixo >= custo * (1 + margem/100)
+  const lucroDesejado = custo * (1 + margem / 100);
+  const minVenda = (lucroDesejado + frete + fixo) / (1 - fee / 100);
+
+  document.getElementById('fee-minvenda').textContent = `R$${minVenda.toFixed(2)}`;
+}
+
+function estimateFrete(pesoG, c = 20, l = 15, a = 5, modalidade = null) {
+  const mod = modalidade || document.getElementById('param-envio')?.value || 'me2';
+  if (mod === 'full') {
+    // FULL: frete grátis para comprador, custo cobrado do vendedor
+    const pesoCubado = (c * l * a) / 5000;
+    const pesoReal = pesoG / 1000;
+    const pC = Math.max(pesoReal, pesoCubado);
+    return pC <= 0.3 ? 8 : pC <= 0.7 ? 12 : pC <= 1.5 ? 16 : 22;
+  }
+  if (mod === 'flex') return 0;
+  // Correios / coleta
+  const pKg = pesoG / 1000;
+  return pKg <= 0.3 ? 10 : pKg <= 0.7 ? 13 : pKg <= 1.5 ? 17 : pKg <= 3 ? 22 : 28;
+}
+
+window.calcFrete = function() {
+  const peso = parseInt(document.getElementById('calc-peso').value) || 300;
+  const c = parseInt(document.getElementById('calc-c').value) || 20;
+  const l = parseInt(document.getElementById('calc-l').value) || 15;
+  const a = parseInt(document.getElementById('calc-a').value) || 5;
+
+  const mods = [
+    { name: 'FULL', id: 'full', cls: 'full' },
+    { name: 'Correios', id: 'correios', cls: 'correios' },
+    { name: 'Coleta (ME2)', id: 'me2', cls: 'places' },
+    { name: 'Flex', id: 'flex', cls: 'flex' },
+  ];
+
+  const res = document.getElementById('frete-result');
+  res.style.display = 'grid';
+  res.innerHTML = mods.map(m => {
+    const v = estimateFrete(peso, c, l, a, m.id);
+    return `<div class="fee-card">
+      <div class="fee-name"><span class="ship-pill ship-${m.cls}">${m.name}</span></div>
+      <div class="fee-value" style="color:var(--accent2);margin-top:6px">R$${v === 0 ? '0' : v.toFixed(0)}</div>
+      <div class="fee-sub">estimado</div>
+    </div>`;
+  }).join('');
+};
+
+let analysisResults = [];
+
+window.startAnalysis = function() {
+  const selected = extractedProducts.filter((_, i) => {
+    const el = document.getElementById('prod-' + i);
+    return el && el.classList.contains('selected');
+  });
+
+  if (selected.length === 0) {
+    toast('Selecione ao menos um produto no catálogo', 'err');
+    switchTab('upload');
+    return;
+  }
+
+  const mlToken = cfg('ml-token');
+  if (!mlToken) {
+    toast('Conecte o Mercado Livre primeiro', 'err');
+    return;
+  }
+
+  const params = {
+    custo: parseFloat(document.getElementById('param-custo').value) || 15,
+    margem: parseFloat(document.getElementById('param-margem').value) || 20,
+    cat: document.getElementById('param-categoria').value,
+    envio: document.getElementById('param-envio').value,
+    peso: parseInt(document.getElementById('param-peso').value) || 300,
+    c: parseInt(document.getElementById('param-c').value) || 20,
+    l: parseInt(document.getElementById('param-l').value) || 15,
+    a: parseInt(document.getElementById('param-a').value) || 5,
+  };
+
+  runAnalysis(selected, params);
+};
+
+async function runAnalysis(products, params) {
+  const progressEl = document.getElementById('analysis-progress');
+  const logEl = document.getElementById('progress-log');
+  const fillEl = document.getElementById('progress-fill');
+  const textEl = document.getElementById('progress-text');
+  const btn = document.getElementById('btn-start-analysis');
+
+  progressEl.style.display = 'block';
+  btn.disabled = true;
+  analysisResults = [];
+  logEl.innerHTML = '';
+
+  const fee = CATEGORY_FEES[params.cat] || 11;
+  const frete = estimateFrete(params.peso, params.c, params.l, params.a, params.envio);
+
+  addLog(logEl, `Iniciando análise de ${products.length} produtos`, 'info');
+  addLog(logEl, `Comissão ML: ${fee}% | Frete est: R$${frete} | Custo: R$${params.custo}`, '');
+
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
+    const pct = Math.round((i / products.length) * 100);
+    fillEl.style.width = pct + '%';
+    textEl.textContent = `${i + 1}/${products.length} — ${p.name}`;
+    addLog(logEl, `🔍 Buscando: ${p.name}`, 'info');
+
+    try {
+      // Buscar no ML
+      const searchRes = await mlGet(`/sites/MLB/search?q=${encodeURIComponent(p.name)}&limit=5`);
+      const items = searchRes.results || [];
+
+      if (items.length === 0) {
+        analysisResults.push({ product: p, status: 'sem_resultados', items: [], params, fee, frete });
+        addLog(logEl, `  ⚠️ Sem resultados no ML`, 'err');
+        continue;
+      }
+
+      // Pegar preços dos top resultados
+      const prices = items.map(it => it.price).filter(Boolean);
+      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+
+      // Calcular viabilidade
+      const fixo = avgPrice > 79 ? 0 : 6;
+      const lucroLiquido = avgPrice * (1 - fee / 100) - frete - fixo - params.custo;
+      const margemReal = (lucroLiquido / avgPrice) * 100;
+      const minVendaNecess = (params.custo * (1 + params.margem / 100) + frete + fixo) / (1 - fee / 100);
+
+      const status = margemReal >= params.margem ? 'viavel'
+                   : margemReal >= 0 ? 'margem_baixa'
+                   : 'inviavel';
+
+      // Pegar modalidades de envio do 1o item
+      let shippingModes = [];
+      try {
+        const firstItem = items[0];
+        if (firstItem.shipping) {
+          if (firstItem.shipping.tags?.includes('fulfillment')) shippingModes.push('full');
+          if (firstItem.shipping.tags?.includes('flex')) shippingModes.push('flex');
+          if (firstItem.shipping.free_shipping) shippingModes.push('frete_gratis');
+          shippingModes.push('correios');
+        }
+      } catch(e) {}
+
+      analysisResults.push({
+        product: p, status, items: items.slice(0, 3),
+        avgPrice, minPrice, maxPrice, lucroLiquido, margemReal, minVendaNecess,
+        params, fee, frete, shippingModes
+      });
+
+      addLog(logEl, `  ✓ Preço médio: R$${avgPrice.toFixed(2)} | Margem real: ${margemReal.toFixed(1)}% | ${status === 'viavel' ? '✅ VIÁVEL' : status === 'margem_baixa' ? '⚠️ MARGEM BAIXA' : '❌ INVIÁVEL'}`, status === 'viavel' ? 'ok' : 'err');
+
+      // Delay para não sobrecarregar API
+      await sleep(500);
+
+    } catch(e) {
+      addLog(logEl, `  ❌ Erro: ${e.message}`, 'err');
+      analysisResults.push({ product: p, status: 'erro', error: e.message, params, fee, frete });
+    }
+  }
+
+  fillEl.style.width = '100%';
+  textEl.textContent = `Concluído! ${analysisResults.length} produtos analisados.`;
+  addLog(logEl, `\n🎉 Análise concluída!`, 'ok');
+  btn.disabled = false;
+
+  // Salvar no Firebase
+  if (db) {
+    try {
+      await addDoc(collection(db, 'analysis_history'), {
+        timestamp: new Date().toISOString(),
+        product_count: analysisResults.length,
+        results: analysisResults.map(r => ({
+          name: r.product.name,
+          status: r.status,
+          avgPrice: r.avgPrice,
+          margemReal: r.margemReal,
+          lucroLiquido: r.lucroLiquido
+        }))
+      });
+      addLog(logEl, '☁️ Salvo no Firebase', 'ok');
+    } catch(e) {
+      addLog(logEl, '⚠️ Firebase não salvo: ' + e.message, 'err');
+    }
+  }
+
+  renderResults();
+  switchTab('resultados');
+}
+
+function renderResults() {
+  const container = document.getElementById('results-container');
+  const summary = document.getElementById('results-summary');
+
+  if (!analysisResults.length) return;
+
+  summary.style.display = 'grid';
+  const ok = analysisResults.filter(r => r.status === 'viavel').length;
+  const no = analysisResults.filter(r => r.status === 'inviavel' || r.status === 'erro').length;
+  document.getElementById('sum-ok').textContent = ok;
+  document.getElementById('sum-no').textContent = no;
+
+  const sorted = [...analysisResults].sort((a, b) => (b.margemReal || -999) - (a.margemReal || -999));
+
+  container.innerHTML = `
+    <div class="card" style="overflow-x:auto">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Status</th>
+            <th>Preço Médio ML</th>
+            <th>Seu Lucro Est.</th>
+            <th>Margem Real</th>
+            <th>Preço Mínimo Necessário</th>
+            <th>Envio</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map((r, i) => {
+            const statusBadge = r.status === 'viavel'
+              ? '<span class="status-badge status-ok">✅ Viável</span>'
+              : r.status === 'margem_baixa'
+              ? '<span class="status-badge status-warn">⚠️ Margem Baixa</span>'
+              : r.status === 'sem_resultados'
+              ? '<span class="status-badge status-warn">🔍 Sem resultados</span>'
+              : '<span class="status-badge status-no">❌ Inviável</span>';
+
+            const ships = (r.shippingModes || []).slice(0, 3).map(s =>
+              `<span class="ship-pill ship-${s === 'full' ? 'full' : s === 'flex' ? 'flex' : s === 'frete_gratis' ? 'correios' : 'correios'}">${s}</span>`
+            ).join('');
+
+            return `<tr>
+              <td><strong>${r.product.name}</strong></td>
+              <td>${statusBadge}</td>
+              <td class="price">${r.avgPrice ? 'R$' + r.avgPrice.toFixed(2) : '—'}</td>
+              <td class="price ${r.lucroLiquido > 0 ? 'good' : 'bad'}">${r.lucroLiquido !== undefined ? 'R$' + r.lucroLiquido.toFixed(2) : '—'}</td>
+              <td>
+                ${r.margemReal !== undefined ? `
+                  <div class="margin-meter">
+                    <span style="font-family:var(--mono);font-size:12px;color:${r.margemReal >= 20 ? 'var(--ok)' : r.margemReal >= 0 ? 'var(--warn)' : 'var(--danger)'}">${r.margemReal.toFixed(1)}%</span>
+                    <div class="margin-bar"><div class="margin-fill" style="width:${Math.max(0, Math.min(100, r.margemReal))}%;background:${r.margemReal >= 20 ? 'var(--ok)' : r.margemReal >= 0 ? 'var(--warn)' : 'var(--danger)'}"></div></div>
+                  </div>` : '—'}
+              </td>
+              <td class="price">${r.minVendaNecess ? 'R$' + r.minVendaNecess.toFixed(2) : '—'}</td>
+              <td><div class="ship-pills">${ships || '—'}</div></td>
+              <td><button class="btn btn-secondary" onclick="showDetail(${i})" style="font-size:11px;padding:5px 10px">Ver</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+window.showDetail = function(i) {
+  const sorted = [...analysisResults].sort((a, b) => (b.margemReal || -999) - (a.margemReal || -999));
+  const r = sorted[i];
+  if (!r) return;
+
+  document.getElementById('modal-product-name').textContent = r.product.name;
+  const content = document.getElementById('modal-content');
+
+  content.innerHTML = `
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${r.status}</span></div>
+    <div class="detail-row"><span class="detail-label">Preço médio ML</span><span class="detail-value">${r.avgPrice ? 'R$' + r.avgPrice.toFixed(2) : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Menor preço ML</span><span class="detail-value">${r.minPrice ? 'R$' + r.minPrice.toFixed(2) : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Maior preço ML</span><span class="detail-value">${r.maxPrice ? 'R$' + r.maxPrice.toFixed(2) : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Seu custo</span><span class="detail-value">R$${r.params.custo}</span></div>
+    <div class="detail-row"><span class="detail-label">Comissão ML (${r.fee}%)</span><span class="detail-value">R$${r.avgPrice ? (r.avgPrice * r.fee / 100).toFixed(2) : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Frete estimado</span><span class="detail-value">R$${r.frete}</span></div>
+    <div class="detail-row"><span class="detail-label">Lucro líquido estimado</span><span class="detail-value" style="color:${r.lucroLiquido > 0 ? 'var(--ok)' : 'var(--danger)'}">${r.lucroLiquido !== undefined ? 'R$' + r.lucroLiquido.toFixed(2) : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Margem real</span><span class="detail-value">${r.margemReal !== undefined ? r.margemReal.toFixed(1) + '%' : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Preço mínimo para sua margem</span><span class="detail-value">R$${r.minVendaNecess ? r.minVendaNecess.toFixed(2) : '—'}</span></div>
+    ${r.items && r.items.length ? `
+    <div style="margin-top:16px">
+      <div class="card-title">Anúncios Encontrados no ML</div>
+      ${r.items.map(it => `
+        <div class="product-item" style="cursor:default;margin-bottom:6px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500">${it.title}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${it.condition === 'new' ? '✨ Novo' : '🔄 Usado'} • ${it.available_quantity || 0} disponíveis</div>
+          </div>
+          <div style="font-family:var(--mono);color:var(--accent2)">R$${it.price}</div>
+          <a href="${it.permalink}" target="_blank" class="btn btn-secondary" style="font-size:11px;padding:5px 10px">Ver</a>
+        </div>`).join('')}
+    </div>` : ''}
+    ${r.error ? `<div style="color:var(--danger);font-size:13px;margin-top:8px">Erro: ${r.error}</div>` : ''}
+  `;
+
+  document.getElementById('modal-detail').classList.add('open');
+};
+
+window.closeModal = function(id) {
+  document.getElementById(id).classList.remove('open');
+};
+
+// ═══════════════════════════════════════════
+//  HISTÓRICO
+// ═══════════════════════════════════════════
+window.loadHistory = async function() {
+  if (!db) {
+    document.getElementById('history-container').innerHTML = `<div class="info-box">Configure o Firebase para ver histórico em nuvem</div>`;
+    return;
+  }
+  try {
+    const q = query(collection(db, 'analysis_history'), orderBy('timestamp', 'desc'), limit(20));
+    const snap = await getDocs(q);
+    const container = document.getElementById('history-container');
+
+    if (snap.empty) {
+      container.innerHTML = `<div class="empty"><div class="empty-icon">🗂</div><div class="empty-title">Nenhum histórico ainda</div></div>`;
+      return;
+    }
+
+    const rows = snap.docs.map(d => {
+      const data = d.data();
+      const ok = (data.results || []).filter(r => r.status === 'viavel').length;
+      const total = data.product_count || 0;
+      return `<div class="product-item" style="cursor:default">
+        <div style="flex:1">
+          <div style="font-weight:500">${new Date(data.timestamp).toLocaleString('pt-BR')}</div>
+          <div style="font-size:12px;color:var(--muted)">${total} produtos analisados</div>
+        </div>
+        <span class="status-badge status-ok">${ok} viáveis</span>
+        <span class="status-badge status-no">${total - ok} inviáveis</span>
+      </div>`;
+    });
+
+    container.innerHTML = `<div class="product-list">${rows.join('')}</div>`;
+  } catch(e) {
+    toast('Erro ao carregar histórico: ' + e.message, 'err');
+  }
+};
+
+// ═══════════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════════
+window.exportCSV = function() {
+  if (!analysisResults.length) { toast('Nenhum resultado para exportar', 'err'); return; }
+  const header = 'Produto,Status,Preço Médio ML,Menor Preço ML,Seu Custo,Comissão ML,Frete,Lucro Líquido,Margem Real %,Preço Mínimo Necessário\n';
+  const rows = analysisResults.map(r => [
+    `"${r.product.name}"`,
+    r.status,
+    r.avgPrice?.toFixed(2) || '',
+    r.minPrice?.toFixed(2) || '',
+    r.params.custo,
+    r.avgPrice ? (r.avgPrice * r.fee / 100).toFixed(2) : '',
+    r.frete,
+    r.lucroLiquido?.toFixed(2) || '',
+    r.margemReal?.toFixed(1) || '',
+    r.minVendaNecess?.toFixed(2) || ''
+  ].join(',')).join('\n');
+
+  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `analise-ml-${Date.now()}.csv`; a.click();
+  toast('CSV exportado!', 'ok');
+};
+
+// ═══════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════
+window.switchTab = function(id) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const ids = ['upload','analise','resultados','taxas','historico'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + id);
+  });
+  if (id === 'analise') updateSelectedCount();
+};
+
+function addLog(el, msg, type = '') {
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function log(msg, type = '') {
+  console.log(`[${type}] ${msg}`);
+}
+
+window.toast = function(msg, type = 'info') {
+  const area = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'ok' ? '✅' : type === 'err' ? '❌' : 'ℹ️'}</span> ${msg}`;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+updateRedirectURI();
+initFirebase();
+loadMLStatus();
+updateCategoryFees();
+handleMLCallback();
+
+// Mostrar setup se não configurado
+if (!cfg('backend') || !cfg('ml-id')) {
+  setTimeout(() => {
+    document.getElementById('setup-banner').classList.add('visible');
+    loadConfigUI();
+  }, 500);
+}
+</script>
+</body>
+</html>
