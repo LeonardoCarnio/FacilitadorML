@@ -2,23 +2,88 @@ import json
 import requests
 from http.server import BaseHTTPRequestHandler
 
+
 class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
 
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
+        try:
 
-        data = json.loads(body)
+            content_length = int(
+                self.headers.get("Content-Length", 0)
+            )
 
-        query = data.get("query", "")
+            body = self.rfile.read(content_length)
 
-        url = f"https://api.mercadolibre.com/sites/MLB/search?q={query}"
+            data = json.loads(body)
 
-        response = requests.get(url)
+            query = data.get("query", "").strip()
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+            if not query:
+
+                return self.send_json(
+                    400,
+                    {
+                        "success": False,
+                        "error": "query vazia"
+                    }
+                )
+
+            url = (
+                "https://api.mercadolibre.com/"
+                f"sites/MLB/search?q={query}&limit=10"
+            )
+
+            response = requests.get(
+                url,
+                timeout=20
+            )
+
+            result = response.json()
+
+            products = []
+
+            for item in result.get("results", []):
+
+                products.append({
+                    "id": item.get("id"),
+                    "title": item.get("title"),
+                    "price": item.get("price"),
+                    "permalink": item.get("permalink"),
+                    "thumbnail": item.get("thumbnail")
+                })
+
+            return self.send_json(
+                200,
+                {
+                    "success": True,
+                    "query": query,
+                    "products": products
+                }
+            )
+
+        except Exception as e:
+
+            return self.send_json(
+                500,
+                {
+                    "success": False,
+                    "error": str(e)
+                }
+            )
+
+    def send_json(self, status_code, data):
+
+        self.send_response(status_code)
+        self.send_header(
+            "Content-Type",
+            "application/json; charset=utf-8"
+        )
         self.end_headers()
 
-        self.wfile.write(response.text.encode())
+        self.wfile.write(
+            json.dumps(
+                data,
+                ensure_ascii=False
+            ).encode("utf-8")
+        )
