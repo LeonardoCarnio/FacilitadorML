@@ -11,10 +11,10 @@ class handler(BaseHTTPRequestHandler):
 
         try:
 
-            parsed_url = urlparse(self.path)
-            query_params = parse_qs(parsed_url.query)
+            parsed = urlparse(self.path)
+            params = parse_qs(parsed.query)
 
-            code = query_params.get("code", [None])[0]
+            code = params.get("code", [None])[0]
 
             if not code:
                 return self.send_json(
@@ -25,36 +25,14 @@ class handler(BaseHTTPRequestHandler):
                     }
                 )
 
-            client_id = os.getenv("ML_CLIENT_ID")
-            client_secret = os.getenv("ML_CLIENT_SECRET")
-            redirect_uri = os.getenv("ML_REDIRECT_URI")
-
-            if not client_id:
-                return self.send_json(
-                    500,
-                    {"success": False, "error": "ML_CLIENT_ID não configurado"}
-                )
-
-            if not client_secret:
-                return self.send_json(
-                    500,
-                    {"success": False, "error": "ML_CLIENT_SECRET não configurado"}
-                )
-
-            if not redirect_uri:
-                return self.send_json(
-                    500,
-                    {"success": False, "error": "ML_REDIRECT_URI não configurado"}
-                )
-
             response = requests.post(
                 "https://api.mercadolibre.com/oauth/token",
                 data={
                     "grant_type": "authorization_code",
-                    "client_id": client_id,
-                    "client_secret": client_secret,
+                    "client_id": os.getenv("ML_CLIENT_ID"),
+                    "client_secret": os.getenv("ML_CLIENT_SECRET"),
                     "code": code,
-                    "redirect_uri": redirect_uri
+                    "redirect_uri": os.getenv("ML_REDIRECT_URI")
                 },
                 timeout=30
             )
@@ -62,23 +40,19 @@ class handler(BaseHTTPRequestHandler):
             result = response.json()
 
             if response.status_code != 200:
-
                 return self.send_json(
                     response.status_code,
-                    {
-                        "success": False,
-                        "mercadolivre_response": result
-                    }
+                    result
                 )
 
-          self.send_response(302)
+            self.send_response(302)
 
-self.send_header(
-    "Location",
-    "https://facilitador-ml.vercel.app/?ml_connected=true"
-)
+            self.send_header(
+                "Location",
+                "https://facilitador-ml.vercel.app/?ml_connected=true"
+            )
 
-self.end_headers()
+            self.end_headers()
 
         except Exception as e:
 
@@ -90,15 +64,15 @@ self.end_headers()
                 }
             )
 
-    def send_json(self, status_code, data):
+    def send_json(self, status, data):
 
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_response(status)
+        self.send_header(
+            "Content-Type",
+            "application/json"
+        )
         self.end_headers()
 
         self.wfile.write(
-            json.dumps(
-                data,
-                ensure_ascii=False
-            ).encode("utf-8")
+            json.dumps(data).encode("utf-8")
         )
