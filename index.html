@@ -1466,7 +1466,7 @@ async function extractPDF(file, logEl) {
   const fd = new FormData();
   fd.append('file', file);
 
-  const resp = await fetch(`${backend}/api/extract-pdf`, { method: 'POST', body: fd });
+  const resp = await fetch(`${backend}/api/extract_pdf`, { method: 'POST', body: fd });
   const data = await resp.json();
   if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
   // O backend já devolve { products: [...] } — encapsulamos pra reaproveitar a função abaixo.
