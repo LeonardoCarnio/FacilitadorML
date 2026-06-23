@@ -10,8 +10,18 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            json.dumps({
-                "success": True,
-                "message": "API funcionando"
-            }).encode()
+            json.dumps(
+                {
+                    "products": [
+                        {
+                            "name": "Produto Teste 1",
+                            "price": 10.50
+                        },
+                        {
+                            "name": "Produto Teste 2",
+                            "price": 22.90
+                        }
+                    ]
+                }
+            ).encode()
         )
