@@ -1,38 +1,103 @@
-import os
 import json
+import re
+import tempfile
+import cgi
+import fitz
 from http.server import BaseHTTPRequestHandler
-
-import google.generativeai as genai
-
-genai.configure(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
 
 
 class handler(BaseHTTPRequestHandler):
 
-    def do_GET(self):
+    def do_POST(self):
 
         try:
 
-            models = []
+            ctype, pdict = cgi.parse_header(
+                self.headers.get("Content-Type")
+            )
 
-            for m in genai.list_models():
+            if ctype != "multipart/form-data":
+                return self.send_json(
+                    400,
+                    {
+                        "success": False,
+                        "error": "Esperado multipart/form-data"
+                    }
+                )
 
-                models.append({
-                    "name": m.name,
-                    "supported_generation_methods": getattr(
-                        m,
-                        "supported_generation_methods",
-                        []
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers["Content-Type"]
+                }
+            )
+
+            if "file" not in form:
+
+                return self.send_json(
+                    400,
+                    {
+                        "success": False,
+                        "error": "Arquivo PDF não enviado"
+                    }
+                )
+
+            pdf_file = form["file"]
+
+            with tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".pdf"
+            ) as temp:
+
+                temp.write(pdf_file.file.read())
+                pdf_path = temp.name
+
+            doc = fitz.open(pdf_path)
+
+            full_text = ""
+
+            for page in doc:
+                full_text += "\n" + page.get_text()
+
+            doc.close()
+
+            products = []
+
+            pattern = re.compile(
+                r"(BOM-\d+)\s+(.+?)\s+CX:.*?1CX:\s*([\d,]+)",
+                re.DOTALL
+            )
+
+            matches = pattern.findall(full_text)
+
+            for sku, name, price in matches:
+
+                name = " ".join(name.split())
+
+                try:
+                    price = float(
+                        price.replace(".", "")
+                             .replace(",", ".")
                     )
+                except:
+                    price = 0
+
+                products.append({
+                    "sku": sku.strip(),
+                    "name": name.strip(),
+                    "price": price,
+                    "category": "",
+                    "image_url": ""
                 })
 
             return self.send_json(
                 200,
                 {
                     "success": True,
-                    "models": models
+                    "products": products,
+                    "total": len(products)
                 }
             )
 
@@ -46,13 +111,14 @@ class handler(BaseHTTPRequestHandler):
                 }
             )
 
-    def do_POST(self):
+    def do_GET(self):
 
         return self.send_json(
             200,
             {
-                "success": False,
-                "message": "Modo de diagnóstico ativo"
+                "success": True,
+                "endpoint": "extract_pdf",
+                "status": "online"
             }
         )
 
@@ -68,7 +134,6 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(
             json.dumps(
                 data,
-                ensure_ascii=False,
-                indent=2
+                ensure_ascii=False
             ).encode("utf-8")
         )
