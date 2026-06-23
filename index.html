@@ -1236,7 +1236,7 @@ function loadConfigUI() {
 function updateRedirectURI() {
   // Redirect agora aponta pro backend Vercel
   const backend = cfg('backend');
-  const uri = backend ? `${backend}/api/ml-oauth-callback` : '(configure a URL do backend)';
+  const uri = backend ? `${backend}/api/ml_oauth_callback` : '(configure a URL do backend)';
   ['redirect-uri-display','redirect-uri-display2'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = uri;
@@ -1246,7 +1246,7 @@ function updateRedirectURI() {
 window.copyRedirectURI = function() {
   const backend = cfg('backend');
   if (!backend) return toast('Configure a URL do backend primeiro', 'err');
-  navigator.clipboard.writeText(`${backend}/api/ml-oauth-callback`).then(() => toast('URI copiada!', 'ok'));
+  navigator.clipboard.writeText(`${backend}/api/ml_oauth_callback`).then(() => toast('URI copiada!', 'ok'));
 };
 
 window.toggleSetup = function() {
@@ -1286,7 +1286,7 @@ async function renewToken(refreshToken) {
   const backend = cfg('backend');
   if (!backend || !refreshToken) { setMLDisconnected(); return; }
   try {
-    const resp = await fetch(`${backend}/api/ml-refresh`, {
+    const resp = await fetch(`${backend}/api/ml_refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken })
@@ -1333,7 +1333,7 @@ window.handleMLAuth = function() {
     return;
   }
   // Redirect URI = backend Vercel. State = URL do frontend (pra voltar pra cá depois).
-  const redirectURI = encodeURIComponent(`${backend}/api/ml-oauth-callback`);
+  const redirectURI = encodeURIComponent(`${backend}/api/ml_oauth_callback`);
   const state = encodeURIComponent(window.location.href.split('#')[0].split('?')[0]);
   const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectURI}&state=${state}`;
   window.location.href = url;
@@ -1396,7 +1396,7 @@ async function mlGet(path) {
 async function callGeminiText(prompt) {
   const backend = cfg('backend');
   if (!backend) throw new Error('Configure a URL do backend Vercel');
-  const resp = await fetch(`${backend}/api/extract-text`, {
+  const resp = await fetch(`${backend}/api/extract_text`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: prompt })
@@ -1578,7 +1578,7 @@ const CATEGORY_FEES_FALLBACK = {
 async function geminiAnalyzeProduct(product) {
   const backend = cfg('backend');
   if (!backend) throw new Error('Configure a URL do Backend nas configurações');
-  const url = backend.replace(/\/$/, '') + '/api/analyze-product';
+  const url = backend.replace(/\/$/, '') + '/api/analyze_product';
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
