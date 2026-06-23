@@ -1,64 +1,33 @@
+import os
 import json
-import requests
-from http.server import BaseHTTPRequestHandler
+import google.generativeai as genai
 
-TOKEN_FILE = "/tmp/ml_token.json"
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-class handler(BaseHTTPRequestHandler):
-
-```
-def do_GET(self):
-
+def analyze_product(product_data: dict):
+    model = genai.GenerativeModel('gemini-1.5-pro')
+    
+    prompt = f"""
+    Analise o seguinte produto e retorne um JSON com:
+    - recomendacao: COMPRAR | ANALISAR | EVITAR
+    - score: número de 0 a 100
+    - riscos: array de strings
+    - oportunidades: array de strings
+    - suggestedShippingMode: PAC | SEDEX | RETIRADA | MOTOBOY | N/A (baseado no peso, volume e tipo do produto)
+    
+    Produto: {json.dumps(product_data, ensure_ascii=False)}
+    """
+    
+    response = model.generate_content(prompt)
+    
     try:
-
-        with open(TOKEN_FILE, "r") as f:
-            token_data = json.load(f)
-
-        access_token = token_data["access_token"]
-
-        response = requests.get(
-            "https://api.mercadolibre.com/users/me",
-            headers={
-                "Authorization": f"Bearer {access_token}"
-            },
-            timeout=30
-        )
-
-        user_data = response.json()
-
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-
-        self.wfile.write(
-            json.dumps({
-                "connected": True,
-                "user": user_data
-            }).encode()
-        )
-
-    except FileNotFoundError:
-
-        self.send_response(400)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-
-        self.wfile.write(
-            json.dumps({
-                "connected": False,
-                "message": "Nenhum token encontrado"
-            }).encode()
-        )
-
-    except Exception as e:
-
-        self.send_response(500)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-
-        self.wfile.write(
-            json.dumps({
-                "error": str(e)
-            }).encode()
-        )
-```
+        result = json.loads(response.text)
+        return result
+    except:
+        return {
+            "recomendacao": "ANALISAR",
+            "score": 50,
+            "riscos": ["Erro na análise"],
+            "oportunidades": [],
+            "suggestedShippingMode": "N/A"
+        }
