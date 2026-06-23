@@ -2123,17 +2123,32 @@ function computeVerdict(r, paramMargem){
 const _origRunAnalysis = runAnalysis;
 // (runAnalysis reatribuído abaixo)
 runAnalysis = async function (products, params){
+
   const progressEl = document.getElementById('analysis-progress');
   const logEl = document.getElementById('progress-log');
   const fillEl = document.getElementById('progress-fill');
   const textEl = document.getElementById('progress-text');
   const btn = document.getElementById('btn-start-analysis');
+
   const pauseBtn = document.getElementById('btn-pause');
   const cancelBtn = document.getElementById('btn-cancel');
 
-  progressEl.style.display = 'block';
-  pauseBtn.style.display = cancelBtn.style.display = 'inline-flex';
-  btn.disabled = true;
+  if (progressEl)
+      progressEl.style.display = 'block';
+
+  if (pauseBtn)
+      pauseBtn.style.display = 'inline-flex';
+
+  if (cancelBtn)
+      cancelBtn.style.display = 'inline-flex';
+
+  if (btn)
+      btn.disabled = true;
+
+  analysisResults = [];
+
+  if (logEl)
+      logEl.innerHTML = '';
   analysisResults = [];
   logEl.innerHTML = '';
   analysisState = { running:true, paused:false, cancelled:false, index:0 };
@@ -2151,8 +2166,13 @@ runAnalysis = async function (products, params){
 
     analysisState.index = i;
     const p = products[i];
-    fillEl.style.width = Math.round((i / products.length) * 100) + '%';
-    textEl.textContent = `${i+1}/${products.length} — ${p.name}`;
+if (fillEl)
+  fillEl.style.width =
+    Math.round((i / products.length) * 100) + '%';
+
+if (textEl)
+  textEl.textContent =
+    `${i+1}/${products.length} — ${p.name}`;
     addLog(logEl, `🔍 ${p.name}`, 'info');
 
     try {
