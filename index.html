@@ -2274,12 +2274,32 @@ if (textEl)
     }
   }
 
+  if (fillEl)
   fillEl.style.width = '100%';
-  textEl.textContent = analysisState.cancelled ? `Cancelado em ${analysisResults.length} produtos.` : `Concluído! ${analysisResults.length} produtos analisados.`;
-  addLog(logEl, analysisState.cancelled ? '⛔ Análise interrompida' : '🎉 Análise concluída!', 'ok');
+
+if (textEl)
+  textEl.textContent = analysisState.cancelled
+    ? `Cancelado em ${analysisResults.length} produtos.`
+    : `Concluído! ${analysisResults.length} produtos analisados.`;
+
+addLog(
+  logEl,
+  analysisState.cancelled
+    ? '⛔ Análise interrompida'
+    : '🎉 Análise concluída!',
+  'ok'
+);
+
+if (btn)
   btn.disabled = false;
-  pauseBtn.style.display = cancelBtn.style.display = 'none';
-  analysisState.running = false;
+
+if (pauseBtn)
+  pauseBtn.style.display = 'none';
+
+if (cancelBtn)
+  cancelBtn.style.display = 'none';
+
+analysisState.running = false;
 
   if (db){
     try {
