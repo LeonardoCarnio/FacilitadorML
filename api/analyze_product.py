@@ -1,6 +1,8 @@
 import os
 import json
+import traceback
 from http.server import BaseHTTPRequestHandler
+
 import google.generativeai as genai
 
 genai.configure(
@@ -24,19 +26,19 @@ class handler(BaseHTTPRequestHandler):
 
             name = data.get("name", "")
 
-            model_name = "models/gemini-2.0-flash"
-
             model = genai.GenerativeModel(
-                model_name
+                "gemini-2.0-flash"
             )
 
             prompt = f"""
-Analise este produto do catálogo.
+Analise este produto para venda no Mercado Livre.
 
 Produto:
 {name}
 
-Retorne APENAS JSON válido:
+Retorne APENAS JSON válido.
+
+Formato:
 
 {{
   "categoryId":"MLB1000",
@@ -62,42 +64,78 @@ Retorne APENAS JSON válido:
                 text = text.replace(
                     "```json",
                     ""
-                ).replace(
+                )
+
+            if text.endswith("```"):
+                text = text.replace(
                     "```",
                     ""
-                ).strip()
+                )
+
+            text = text.strip()
 
             result = json.loads(text)
 
-            return self.send_json(
+            self.send_json(
                 200,
                 result
             )
 
         except Exception as e:
 
-            return self.send_json(
+            self.send_json(
                 500,
                 {
                     "success": False,
-                    "error": str(e)
+                    "error": str(e),
+                    "trace": traceback.format_exc()
                 }
             )
 
     def do_GET(self):
 
-        self.send_json(
-            200,
-            {
-                "success": True,
-                "endpoint": "analyze_product",
-                "status": "online"
-            }
+        try:
+
+            models = []
+
+            for m in genai.list_models():
+                models.append(m.name)
+
+            self.send_json(
+                200,
+                {
+                    "success": True,
+                    "endpoint": "analyze_product",
+                    "status": "online",
+                    "has_key": bool(
+                        os.getenv(
+                            "GEMINI_API_KEY"
+                        )
+                    ),
+                    "models": models
+                }
+            )
+
+        except Exception as e:
+
+            self.send_json(
+                500,
+                {
+                    "success": False,
+                    "error": str(e),
+                    "trace": traceback.format_exc()
+                }
+            )
+
+    def send_json(
+        self,
+        status_code,
+        data
+    ):
+
+        self.send_response(
+            status_code
         )
-
-    def send_json(self, status_code, data):
-
-        self.send_response(status_code)
 
         self.send_header(
             "Content-Type",
@@ -110,5 +148,7 @@ Retorne APENAS JSON válido:
             json.dumps(
                 data,
                 ensure_ascii=False
-            ).encode("utf-8")
+            ).encode(
+                "utf-8"
+            )
         )
